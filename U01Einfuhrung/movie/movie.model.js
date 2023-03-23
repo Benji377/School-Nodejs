@@ -1,8 +1,8 @@
 const { v4: uuid } = require('uuid');
 let data = [
-    { id: uuid(), title: 'Iron Man', year: '2008' },
-    { id: uuid(), title: 'Thor', year: '2011' },
-    { id: uuid(), title: 'Capitain America', year: '2001' }
+    { id: uuid(), title: 'Iron Man', year: '2008', public: true, owner: 'sepp'},
+    { id: uuid(), title: 'Thor', year: '2011', public: true, owner: 'resi' },
+    { id: uuid(), title: 'Capitain America', year: '2001', public: false, owner: 'sepp' }
 ];
 function getAll() {
     return data;

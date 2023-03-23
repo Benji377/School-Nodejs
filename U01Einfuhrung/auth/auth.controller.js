@@ -48,8 +48,8 @@ module.exports = function (app) {
         '/logout',
         (request, response) => {
             request.session.returnTo = undefined;
-            request.logout();
+            request.logout(() => {});
             response.redirect('/');
         }
     );
-};                     
+};
