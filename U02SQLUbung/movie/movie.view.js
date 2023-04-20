@@ -11,7 +11,7 @@ function renderHeader(request) {
     <h1>Filmliste</h1>
     ${
       request.user
-        ? `<p class="title">Sie sind angemeldet als ${request.user.username}. Ihr Name lautet ${request.user.firstname} ${request.user.lastname}</p>
+        ? `<p class="title">Sie sind angemeldet als ${request.user.username}. Ihr Name lautet ${request.user.firstname} ${request.user.secondname}</p>
          <a href="/logout">Logout</a>
          <a href="/movie/edit">Neuer Film</a>`
         : `<p class="title">Melden Sie sich an, um Ihre Filme hinzuzufügen</p>
@@ -27,11 +27,11 @@ function renderList(movies, request) {
     <tr><th>Titel</th><th>Jahr</th><th>Öffentlich</th><th>Besitzer</th>
     <th></th><th></th></tr>
     ${request.user ? movies.map((movie) =>
-        movie.owner == request.user.username || movie.public ?
+        movie.owner == request.user.username || movie.published == 1 ?
         `<tr>
         <td>${movie.title}</td>
         <td>${movie.year}</td>
-        <td>${movie.public ? "Ja" : "Nein"}</td>
+        <td>${movie.published ? "Ja" : "Nein"}</td>
         <td>${movie.owner}</td>
         ${request.user && request.user.username == movie.owner
             ? `<td><a href="/movie/remove/${movie.id}">Löschen</a></td>
@@ -44,11 +44,11 @@ function renderList(movies, request) {
           .join("")
         :
         movies.map((movie) =>
-            !movie.public ? '' :
+            !movie.published ? '' :
             `<tr>
             <td>${movie.title}</td>
             <td>${movie.year}</td>
-            <td>${movie.public ? "Ja" : "Nein"}</td>
+            <td>${movie.published ? "Ja" : "Nein"}</td>
             <td>${movie.owner}</td>
             ${request.user && request.user.username == movie.owner
                 ? `<td><a href="/movie/remove/${movie.id}">Löschen</a></td>
@@ -79,7 +79,7 @@ function renderMovie(movie, request) {
     </tr>
     <tr>
     <td>Öffentlich:</td>
-    <td>${movie.public ? "Ja" : "Nein"}</td>
+    <td>${movie.published ? "Ja" : "Nein"}</td>
     </tr>
     <tr>
     <td>Besitzer:</td>
@@ -110,8 +110,8 @@ function editMovie(movie, request) {
     </tr>
 
     <tr>
-    <td><label for="public">Öffentlich:</label></td>
-    <td><input type="checkbox" id="public" name="public" value="${movie.public}" ${movie.public ? "checked" : ""}></td>
+    <td><label for="published">Öffentlich:</label></td>
+    <td><input type="checkbox" id="published" name="published" value="${movie.published}" ${movie.published ? "checked" : ""}></td>
     </tr>
 
     <tr>
@@ -128,4 +128,22 @@ function editMovie(movie, request) {
     </html>
     `;
 }
-module.exports = { renderList, renderMovie, editMovie };
+
+function errorDisplay(error) {
+  console.log("Failed: ", error);
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+  <meta charset="UTF-8">
+  <title>Filmliste</title>
+  <link rel="stylesheet" href="/style.css">
+  </head>
+  <body>
+  <h1>Meldung</h1>
+  <p>Die Web-Anwendung ist momentan überlastet. Probieren sie es später wieder...</p>
+  <a href="#">Wiederholen</a>
+  </body>
+  `;
+}
+module.exports = { renderList, renderMovie, editMovie, errorDisplay };

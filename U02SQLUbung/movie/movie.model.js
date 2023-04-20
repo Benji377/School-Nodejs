@@ -1,4 +1,3 @@
-const { v4: uuid } = require('uuid');
 const mysql = require('mysql');
 
 const connectionProperties = {
@@ -35,7 +34,7 @@ class Database {
     }
 }
 
-async function getAllDatabaseAsync() {
+async function getAll() {
     try {
         const database = new Database(connectionProperties);
         const sql = `SELECT movies.id, title, year, published,
@@ -51,30 +50,63 @@ async function getAllDatabaseAsync() {
     }
 }
 
-
-let data = [
-    { id: uuid(), title: 'Iron Man', year: '2008', public: true, owner: 'sepp' },
-    { id: uuid(), title: 'Thor', year: '2011', public: true, owner: 'resi' },
-    { id: uuid(), title: 'Capitain America', year: '2001', public: false, owner: 'sepp' }
-];
-function getAll() {
-    getAllDatabaseAsync()
-        .then(value => console.log("Async: ", value))
-        .catch(err => console.log("Error: ", err));
-    return data;
-}
-function remove(id) {
-    data = data.filter(movie => movie.id !== id);
-}
-function get(id) {
-    return data.find(movie => movie.id === id);
-}
-function save(movie) {
-    if (movie.id === '-1') {
-        movie.id = uuid();
-        data.push(movie);
-    } else {
-        data = data.map(item => item.id === movie.id ? movie : item);
+async function get(movie_id) {
+    try {
+        const database = new Database(connectionProperties);
+        const sql = `SELECT movies.id, title, year, published,
+        users.username AS owner, CONCAT(users.firstname, ' ',
+        users.secondname) AS fullname
+            FROM movies, users
+            WHERE movies.owner = users.id
+            AND movies.id = ?
+            ORDER BY title;`;
+        const result = await database.queryClose(sql, [movie_id]);
+        return Promise.resolve(result);
+    } catch (error) {
+        return Promise.reject(error);
     }
 }
+
+async function remove(id) {
+    try {
+        const database = new Database(connectionProperties);
+        const sql = `DELETE from movies WHERE movies.id = ?`;
+        const result = await database.queryClose(sql, [id]);
+        return Promise.resolve(result);
+    } catch (error) {
+        return Promise.reject(error);
+    }
+}
+
+async function save(movie) {
+    if (movie.id != "-1") {
+        try {
+            const database = new Database(connectionProperties);
+            const sql = `UPDATE movies SET 
+                title = ?, 
+                year = ?, 
+                published = ?
+                WHERE movies.id = ?;`;
+            const result = await database.queryClose(sql, [movie.title, movie.year, movie.published ? 1 : 0, movie.id]);
+            return Promise.resolve(result);
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    } else {
+        try {
+            const database = new Database(connectionProperties);
+            const sql1 = `SELECT id FROM users WHERE username = ?`;
+            const sql2 = `INSERT INTO movies 
+            (title, year, published, owner) 
+            VALUES (?, ?, ?, ?);`;
+            const owner = await database.query(sql1, [movie.owner]);
+            const result = await database.queryClose(sql2, [movie.title, movie.year, movie.published, owner[0].id]);
+            return Promise.resolve(result);
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    }
+
+}
+
 module.exports = { getAll, remove, get, save }; 
