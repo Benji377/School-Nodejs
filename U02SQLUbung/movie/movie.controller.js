@@ -4,19 +4,19 @@ const movieView = require('./movie.view.js');
 function listAction(request, response) {
     movieModel.getAll()
         .then(result => response.send(movieView.renderList(result, request)))
-        .catch(err => response.send(movieView.errorDisplay(err)));
+        .catch(_ => response.send(movieView.errorDisplay()));
 }
 
 function removeAction(request, response) {
     movieModel.get(request.params.id)
     .then(res => {movieModel.remove(res[0].id); response.redirect(request.baseUrl);})
-    .catch(err => response.send(movieView.errorDisplay(err)));
+    .catch(_ => response.send(movieView.errorDisplay()));
 }
 
 function viewAction(request, response) {
     movieModel.get(request.params.id)
         .then(res => response.send(movieView.renderMovie(res[0], request)))
-        .catch(err => response.send(movieView.errorDisplay(err)));
+        .catch(_ => response.send(movieView.errorDisplay()));
 }
 
 function editAction(request, response) {
@@ -24,7 +24,7 @@ function editAction(request, response) {
     if (request.params.id) {
         movieModel.get(request.params.id)
             .then(res => response.send(movieView.editMovie(res[0], request)))
-            .catch(err => response.send(movieView.errorDisplay(err)));
+            .catch(_ => response.send(movieView.errorDisplay()));
         return;
     }
     response.send(movieView.editMovie(movie, request));
@@ -40,6 +40,19 @@ function saveAction(request, response) {
     };
     movieModel.save(movie)
         .then(_ => response.redirect(request.baseUrl))
-        .catch(err => response.send(movieView.errorDisplay(err)));
+        .catch(_ => response.send(movieView.errorDisplay()));
 }
-module.exports = { listAction, removeAction, editAction, saveAction, viewAction };
+
+function importAction(request, response) {
+    try {
+        const movies = JSON.parse(request.files.importfile.data.toString('ascii'));
+        console.log("Imported: ", movies);
+        movieModel.importMovies(movies, request.user.username)
+            .then(_ => response.send(movieView.errorCatcher('Filme erfolgreich importiert')))
+            .catch(err => response.send(movieView.errorCatcher(err)))
+    } catch (error) {
+        response.send(movieView.errorCatcher('Falsches JSON-Format'))
+    }
+}
+
+module.exports = { listAction, removeAction, editAction, saveAction, viewAction, importAction };

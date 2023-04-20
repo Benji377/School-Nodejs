@@ -106,7 +106,41 @@ async function save(movie) {
             return Promise.reject(error);
         }
     }
-
 }
 
-module.exports = { getAll, remove, get, save }; 
+async function importMovies(movies, user) {
+    const sql1 = `START TRANSACTION;`;
+    const sql2 = `SELECT id FROM users WHERE username = ?;`;
+    const sql3 = `SELECT COUNT(*) AS count FROM movies WHERE title = ?`;
+    const sql4 = `INSERT INTO movies (title, year, published, owner) VALUES (?, ?, ?, ?);`;
+    const sql5 = `COMMIT;`;
+    const sql6 = `ROLLBACK;`;
+    let database;
+    try {
+        database = new Database(connectionProperties);
+        await database.query(sql1);
+        const owner = await database.query(sql2, [user]);
+
+        for (var i = 0; i < movies.length; i++) {
+            let movie = movies[i];
+            const moviecount = await database.query(sql3, [movie.title]);
+            if (moviecount[0].count > 0) {
+                return Promise.reject(`Film mit Titel ${movie.title} bereits vorhanden`);
+            } else {
+                await database.query(sql4, [movie.title, movie.year, 0, owner[0].id]);
+            }
+        }
+
+        await database.queryClose(sql5);
+        return Promise.resolve();
+    } catch (err) {
+        try {
+            await database.queryClose(sql6);
+        } catch (error) {
+            return Promise.reject(error);
+        }
+        return Promise.reject(err);
+    }
+}
+
+module.exports = { getAll, remove, get, save, importMovies }; 
