@@ -1,0 +1,33 @@
+th,
+td {
+    border-top: 1px solid black;
+    padding: 8px;
+}
+
+.title {
+    background-color: black;
+    color: white;
+    padding: 8px 0px 8px 8px;
+    width: 50%;
+}
+
+.noborder {
+    border: none;
+}
+
+table {
+    margin-top: 8px;
+    padding: 0 8px 0 8px;
+    border-collapse: collapse;
+    width: 50%
+}
+
+th {
+    background-color: black;
+    color: white;
+    text-align: left;
+}
+
+thead th {
+    width: 100%;
+}
