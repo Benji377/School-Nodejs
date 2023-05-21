@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Movie</title>
+  </head>
+  <body>
+    <div>
+      <label for="title">Titel:</label>
+      <input id="title" type="text" />
+    </div>
+    <div>
+      <label for="year">Jahr:</label>
+      <input id="year" type="text" />
+    </div>
+    <div>
+      <label for="published">Öffentlich:</label>
+      <input id="published" type="checkbox" />
+    </div>
+    <button id="insert" type="button">Hinzufügen</button>
+    <button id="asc" type="button">Liste aufsteigend sortiert</button>
+    <button id="desc" type="button">Liste absteigend sortiert</button>
+    <div id="output"></div>
+  </body>
+</html>
+<script src="lib/jquery-3.5.1.min.js"></script>
+<script>
+  class Movie {
+    constructor(id = null, title = null, year = null, published = null, user = null) {
+      this.id = id;
+      this.title = title;
+      this.year = year;
+      this.published = published;
+      this.user = user;
+    }
+    toString() {
+      return this.id + ", " + this.title + ", " + this.year + ", " + this.published + ", " + this.user;
+    }
+  }
+  //Nachdem HTML-Dokument vollständig geladen wurde startet read()
+  $(document).ready(function () {
+    $("#asc, #desc").click(function () {
+      $("#output").empty();
+      $.ajax({
+        url: "http://localhost:8080/movie?sort=" + $(this).attr("id"),
+        type: "GET",
+        // Erwarteter Rückgabetyp
+        dataType: "json",
+        success: function (data) {
+          $.each(data, function (i, data1) {
+            $("#output").append(
+              $("<p>").append(Object.assign(new Movie(), data1).toString())
+            );
+          });
+        },
+        error: function (error) {
+          $("#output").append($("<p>").append(error.responseJSON));
+        },
+      });
+    });
+    $("#insert").click(function () {
+      $("#output").empty();
+      const movie = new Movie(
+        -1,
+        $("#title").val(),
+        $("#year").val(),
+        $("#published").is(":checked") ? "true" : "false",
+        null,
+        1
+      );
+      $.ajax({
+        url: "http://localhost:8080/movie/",
+        type: "POST",
+        // Konvertierung in JSON-String
+        data: JSON.stringify(movie),
+        // Typ der gesendeten Daten
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (data) {
+          $("#output").append(
+            $("<p>").append(Object.assign(new Movie(), data).toString())
+          );
+        },
+        error: function (error) {
+          $("#output").append($("<p>").append(error.responseJSON));
+        },
+      });
+    });
+  });
+</script>

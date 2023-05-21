@@ -1,5 +1,4 @@
 const movieModel = require('./movie.model.js');
-const movieView = require('./movie.view.js');
 
 const jsonXml = require('jsontoxml');
 

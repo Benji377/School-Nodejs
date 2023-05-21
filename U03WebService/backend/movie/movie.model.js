@@ -34,16 +34,30 @@ class Database {
     }
 }
 
-async function getAll() {
+async function getAll(sort, user) {
     try {
         const database = new Database(connectionProperties);
+        let userId = await getUserId(user);
         const sql = `SELECT movies.id, title, year, published,
         users.username AS owner, CONCAT(users.firstname, ' ',
         users.secondname) AS fullname
             FROM movies, users
-            WHERE movies.owner = users.id
-            ORDER BY title;`;
-        const result = await database.queryClose(sql);
+            WHERE movies.owner = users.id AND users.id = ?
+            ORDER BY title ${sort.toUpperCase()};`;
+        const result = await database.queryClose(sql, userId[0].id);
+        return Promise.resolve(result);
+    } catch (error) {
+        return Promise.reject(error);
+    }
+}
+
+async function getUserId(user) {
+    try {
+        const database = new Database(connectionProperties);
+        const sql = `SELECT id
+            FROM users
+            WHERE users.username = ?`;
+        const result = await database.queryClose(sql, user);
         return Promise.resolve(result);
     } catch (error) {
         return Promise.reject(error);
