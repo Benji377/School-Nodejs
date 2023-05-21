@@ -1,0 +1,81 @@
+th,
+td {
+    border-top: 1px solid black;
+    padding: 8px;
+}
+
+.title {
+    background-color: black;
+    color: white;
+    padding: 8px 0px 8px 8px;
+    width: 50%;
+}
+
+.noborder {
+    border: none;
+}
+
+table {
+    margin-top: 8px;
+    padding: 0 8px 0 8px;
+    border-collapse: collapse;
+    width: 50%
+}
+
+th {
+    background-color: black;
+    color: white;
+    text-align: left;
+}
+
+thead th {
+    width: 100%;
+}
+
+.inputdiv {
+    max-width: fit-content;
+    border-radius: 5px;
+    border: 1px solid #555;
+    padding: 5px;
+    margin: 5px 0px;
+    margin-left: 20px;
+}
+
+.filesubmit {
+    background: #bdbfb5;
+    margin-left: 10px;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: black;
+    cursor: pointer;
+}
+
+.filesubmit:hover {
+    background-color: white;
+    color: black;
+    padding: 4px 9px;
+    border: 1px solid black;
+}
+
+input[type=file]::file-selector-button {
+    margin-right: 10px;
+    border: none;
+    background: black;
+    padding: 5px 10px;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background .2s ease-in-out;
+}
+
+input[type=file]::file-selector-button:hover {
+    background-color: white;
+    color: black;
+    padding: 4px 9px;
+    border: 1px solid black;
+}
+
+.inline {
+    display: inline-block;
+}
