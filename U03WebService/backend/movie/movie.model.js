@@ -34,127 +34,191 @@ class Database {
     }
 }
 
-async function getAll(sort, user) {
+async function getAll(sort = null, username = null) {
+    const sql = `
+    SELECT m.id, title, year, published, CONCAT(users.firstname, ' ',
+    users.secondname) as fullname, owner
+    FROM movies m, users u
+    WHERE m.owner = u.id
+    ${username ? 'AND (u.username = ? OR published = true)' : 'AND published = true'}
+    ORDER BY title ${!sort || sort === 'asc' ? 'ASC' : 'DESC'};
+    `;
+    const database = new Database(connectionProperties);
     try {
-        const database = new Database(connectionProperties);
-        let userId = await getUserId(user);
-        const sql = `SELECT movies.id, title, year, published,
-        users.username AS owner, CONCAT(users.firstname, ' ',
-        users.secondname) AS fullname
-            FROM movies, users
-            WHERE movies.owner = users.id AND users.id = ?
-            ORDER BY title ${sort.toUpperCase()};`;
-        const result = await database.queryClose(sql, userId[0].id);
-        return Promise.resolve(result);
+        const result = await database.queryClose(sql, [username]);
+        return result.length === 0 ?
+            Promise.reject('No movies found') : Promise.resolve(result);
     } catch (error) {
-        return Promise.reject(error);
+        return Promise.reject('Database error');
     }
 }
 
-async function getUserId(user) {
-    try {
-        const database = new Database(connectionProperties);
-        const sql = `SELECT id
-            FROM users
-            WHERE users.username = ?`;
-        const result = await database.queryClose(sql, user);
-        return Promise.resolve(result);
-    } catch (error) {
-        return Promise.reject(error);
-    }
-}
-
-async function get(movie_id) {
-    try {
-        const database = new Database(connectionProperties);
-        const sql = `SELECT movies.id, title, year, published,
-        users.username AS owner, CONCAT(users.firstname, ' ',
-        users.secondname) AS fullname
-            FROM movies, users
-            WHERE movies.owner = users.id
-            AND movies.id = ?
-            ORDER BY title;`;
-        const result = await database.queryClose(sql, [movie_id]);
-        return Promise.resolve(result);
-    } catch (error) {
-        return Promise.reject(error);
-    }
-}
-
-async function remove(id) {
-    try {
-        const database = new Database(connectionProperties);
-        const sql = `DELETE from movies WHERE movies.id = ?`;
-        const result = await database.queryClose(sql, [id]);
-        return Promise.resolve(result);
-    } catch (error) {
-        return Promise.reject(error);
-    }
-}
-
-async function save(movie) {
-    if (movie.id != "-1") {
+async function get(id, username) {
+    if (!username) {
+        return Promise.reject('User not set');
+    } else {
         try {
             const database = new Database(connectionProperties);
-            const sql = `UPDATE movies SET 
-                title = ?, 
-                year = ?, 
-                published = ?
-                WHERE movies.id = ?;`;
-            const result = await database.queryClose(sql, [movie.title, movie.year, movie.published ? 1 : 0, movie.id]);
-            return Promise.resolve(result);
+            const sql = `SELECT m.id, title, year, published, CONCAT(users.firstname, ' ',
+                users.secondname) as fullname, owner
+                FROM movies m, users u
+                WHERE m.owner = u.id
+                AND (u.username = ? OR published = true)
+                AND movies.id = ?
+                ORDER BY title;`;
+            const result = await database.queryClose(sql, [username, id]);
+            if (result.length === 0) {
+                return Promise.reject('Movie not found');
+            } else {
+                return Promise.resolve(result[0]);
+            }
         } catch (error) {
-            return Promise.reject(error);
+            return Promise.reject("Database error");
         }
+    }
+}
+
+async function insert(movie, username) {
+    if (!username) {
+        return Promise.reject('User not set');
     } else {
         try {
             const database = new Database(connectionProperties);
             const sql1 = `SELECT id FROM users WHERE username = ?`;
-            const sql2 = `INSERT INTO movies 
-            (title, year, published, owner) 
-            VALUES (?, ?, ?, ?);`;
-            const owner = await database.query(sql1, [movie.owner]);
-            const result = await database.queryClose(sql2, [movie.title, movie.year, movie.published, owner[0].id]);
-            return Promise.resolve(result);
-        } catch (error) {
-            return Promise.reject(error);
-        }
-    }
-}
-
-async function importMovies(movies, user) {
-    const sql1 = `START TRANSACTION;`;
-    const sql2 = `SELECT id FROM users WHERE username = ?;`;
-    const sql3 = `SELECT COUNT(*) AS count FROM movies WHERE title = ?`;
-    const sql4 = `INSERT INTO movies (title, year, published, owner) VALUES (?, ?, ?, ?);`;
-    const sql5 = `COMMIT;`;
-    const sql6 = `ROLLBACK;`;
-    let database;
-    try {
-        database = new Database(connectionProperties);
-        await database.query(sql1);
-        const owner = await database.query(sql2, [user]);
-
-        for (var i = 0; i < movies.length; i++) {
-            let movie = movies[i];
-            const moviecount = await database.query(sql3, [movie.title]);
-            if (moviecount[0].count > 0) {
-                return Promise.reject(`Film mit Titel ${movie.title} bereits vorhanden`);
-            } else {
-                await database.query(sql4, [movie.title, movie.year, 0, owner[0].id]);
+            const user_id = await database.queryClose(sql1, [username]);
+            if (user_id.length === 0) {
+                return Promise.reject('User not found');
             }
-        }
 
-        await database.queryClose(sql5);
-        return Promise.resolve();
-    } catch (err) {
-        try {
-            await database.queryClose(sql6);
+            const sql2 = `INSERT INTO movies (title, year, published, owner) VALUES (?, ?, ?, ?)`;
+            const result = await database.queryClose(sql2, [movie.title, movie.year, movie.published, user_id[0]]);
+            if (result.length === 0) {
+                return Promise.reject('Title exists');
+            } else {
+                return Promise.resolve(result);
+            }
         } catch (error) {
-            return Promise.reject(error);
+            return Promise.reject("Database error");
         }
-        return Promise.reject(err);
     }
 }
 
-module.exports = { getAll, remove, get, save, importMovies }; 
+async function update(movieId, movie, username) {
+    if (!username) {
+        return Promise.reject('User not set');
+    } else {
+        try {
+            const database = new Database(connectionProperties);
+            
+            // Check if the user exists
+            const checkUserQuery = `SELECT id FROM users WHERE username = ?`;
+            const user = await database.queryClose(checkUserQuery, [username]);
+            if (user.length === 0) {
+                return Promise.reject('User not found');
+            }
+            
+            // Check if the movie exists
+            const checkMovieQuery = `SELECT id FROM movies WHERE id = ?`;
+            const existingMovie = await database.queryClose(checkMovieQuery, [movieId]);
+            if (existingMovie.length === 0) {
+                return Promise.reject('Movie not found');
+            }
+            
+            // Check if the provided movie title already exists
+            const checkTitleQuery = `SELECT id FROM movies WHERE title = ?`;
+            const movieWithTitle = await database.queryClose(checkTitleQuery, [movie.title]);
+            if (movieWithTitle.length > 0 && movieWithTitle[0].id !== movieId) {
+                return Promise.reject('Title already exists');
+            }
+            
+            // Update the movie in the database
+            const updateMovieQuery = `UPDATE movies SET title = ?, year = ?, published = ?, owner = ? WHERE id = ?`;
+            const result = await database.queryClose(updateMovieQuery, [movie.title, movie.year, movie.published, user[0].id, movieId]);
+            
+            if (result.affectedRows === 0) {
+                return Promise.reject('Movie update failed');
+            } else {
+                return Promise.resolve(result);
+            }
+        } catch (error) {
+            return Promise.reject('Database error');
+        }
+    }
+}
+
+async function clear(username) {
+    if (!username) {
+        return Promise.reject('User not set');
+    } else {
+        try {
+            const database = new Database(connectionProperties);
+            
+            // Start a transaction
+            await database.query('START TRANSACTION');
+            
+            // Check if the user exists
+            const checkUserQuery = 'SELECT id FROM users WHERE username = ?';
+            const user = await database.query(checkUserQuery, [username]);
+            if (user.length === 0) {
+                await database.query('ROLLBACK');
+                return Promise.reject('User not found');
+            }
+            
+            // Delete movies associated with the user
+            const deleteMoviesQuery = 'DELETE FROM movies WHERE owner = ?';
+            const result = await database.query(deleteMoviesQuery, [user[0].id]);
+            
+            // Commit the transaction if successful
+            await database.query('COMMIT');
+            
+            if (result.affectedRows === 0) {
+                return Promise.reject('No movies found');
+            } else {
+                return Promise.resolve(result);
+            }
+        } catch (error) {
+            // Rollback the transaction on error
+            await database.query('ROLLBACK');
+            return Promise.reject('Database error');
+        }
+    }
+}
+
+async function remove(movieId, username) {
+    if (!username) {
+        return Promise.reject('User not set');
+    } else {
+        try {
+            const database = new Database(connectionProperties);
+            
+            // Check if the user exists
+            const checkUserQuery = `SELECT id FROM users WHERE username = ?`;
+            const user = await database.query(checkUserQuery, [username]);
+            if (user.length === 0) {
+                return Promise.reject('User not found');
+            }
+            
+            // Check if the movie exists
+            const checkMovieQuery = `SELECT id FROM movies WHERE id = ? AND owner = ?`;
+            const movie = await database.query(checkMovieQuery, [movieId, user[0].id]);
+            if (movie.length === 0) {
+                return Promise.reject('Movie not found');
+            }
+            
+            // Delete the movie
+            const deleteMovieQuery = `DELETE FROM movies WHERE id = ?`;
+            const result = await database.query(deleteMovieQuery, [movieId]);
+            
+            if (result.affectedRows === 0) {
+                return Promise.reject('Movie deletion failed');
+            } else {
+                return Promise.resolve(result);
+            }
+        } catch (error) {
+            return Promise.reject('Database error');
+        }
+    }
+}
+
+
+module.exports = { getAll, remove, get, clear, update, insert }; 

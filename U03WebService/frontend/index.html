@@ -10,7 +10,7 @@
     </div>
     <div>
       <label for="year">Jahr:</label>
-      <input id="year" type="text" />
+      <input id="year" type="number" />
     </div>
     <div>
       <label for="published">Öffentlich:</label>
@@ -19,21 +19,28 @@
     <button id="insert" type="button">Hinzufügen</button>
     <button id="asc" type="button">Liste aufsteigend sortiert</button>
     <button id="desc" type="button">Liste absteigend sortiert</button>
+    <hr>
+    <label for="id">Id:</label>
+    <input id="id" type="text">
+    <button id="delete" type="button">Löschen</button>
+    <button id="deleteall" type="button">Alle löschen</button>
+    <hr>
     <div id="output"></div>
   </body>
 </html>
 <script src="lib/jquery-3.5.1.min.js"></script>
 <script>
   class Movie {
-    constructor(id = null, title = null, year = null, published = null, user = null) {
+    constructor(id = null, title = null, year = null, published = null, owner = null, fullname = null) {
       this.id = id;
       this.title = title;
       this.year = year;
       this.published = published;
-      this.user = user;
+      this.owner = owner;
+      this.fullname = fullname;
     }
     toString() {
-      return this.id + ", " + this.title + ", " + this.year + ", " + this.published + ", " + this.user;
+      return this.id + ", " + this.title + ", " + this.year + ", " + this.published + ", " + this.owner + ", " + this.fullname;
     }
   }
   //Nachdem HTML-Dokument vollständig geladen wurde startet read()

@@ -73,52 +73,61 @@ function updateAction(request, response) {
          }));
     }
 
-function removeAction(request, response) {
-    movieModel.get(request.params.id)
-    .then(res => {movieModel.remove(res[0].id); response.redirect(request.baseUrl);})
-    .catch(_ => response.send(movieView.errorDisplay()));
-}
-
 function viewAction(request, response) {
-    movieModel.get(request.params.id)
-        .then(res => response.send(movieView.renderMovie(res[0], request)))
-        .catch(_ => response.send(movieView.errorDisplay()));
+    const id = parseInt(request.params.id, 10);
+    movieModel.get(id, 'sepp')
+        .then(movie => response.format({ 
+            'application/xml': () => {
+                response.send(`<movie>${jsonXml(movie)}</movie>`)
+            },
+            'application/json': () => response.json(movie),
+            'default': () => response.json(movie)
+         }))
+        .catch(error => response.format({ 
+            'application/xml': () =>
+                response.status(error === 'Database error'? 500 : 400).send(error),
+            'application/json': () =>
+                response.status(error === 'Database error' ? 500 : 400).json(error),
+            'default': () => response.status(error === 'Database error' ? 500 : 400).json(error)
+         }));
 }
 
-function editAction(request, response) {
-    let movie = { id: '-1', title: '', year: '', published: 0, owner: '' };
-    if (request.params.id) {
-        movieModel.get(request.params.id)
-            .then(res => response.send(movieView.editMovie(res[0], request)))
-            .catch(_ => response.send(movieView.errorDisplay()));
-        return;
-    }
-    response.send(movieView.editMovie(movie, request));
+function removeAction(request, response) {
+    const id = parseInt(request.params.id, 10);
+    movieModel.remove(id, 'sepp')
+        .then(result => response.format({ 
+            'application/xml': () => {
+                response.send(`<result>${jsonXml(result)}</result>`)
+            },
+            'application/json': () => response.json(result),
+            'default': () => response.json(result)
+         }))
+        .catch(error => response.format({ 
+            'application/xml': () =>
+                response.status(error === 'Database error'? 500 : 400).send(error),
+            'application/json': () =>
+                response.status(error === 'Database error' ? 500 : 400).json(error),
+            'default': () => response.status(error === 'Database error' ? 500 : 400).json(error)
+         }));
 }
 
-function saveAction(request, response) {
-    const movie = {
-        id: request.body.id,
-        title: request.body.title,
-        year: request.body.year,
-        published: request.body.published,
-        owner: request.body.owner
-    };
-    movieModel.save(movie)
-        .then(_ => response.redirect(request.baseUrl))
-        .catch(_ => response.send(movieView.errorDisplay()));
+
+function clearAction(request, response) {
+    movieModel.clear('sepp')
+        .then(result => response.format({ 
+            'application/xml': () => {
+                response.send(`<result>${jsonXml(result)}</result>`)
+            },
+            'application/json': () => response.json(result),
+            'default': () => response.json(result)
+         }))
+        .catch(error => response.format({ 
+            'application/xml': () =>
+                response.status(error === 'Database error'? 500 : 400).send(error),
+            'application/json': () =>
+                response.status(error === 'Database error' ? 500 : 400).json(error),
+            'default': () => response.status(error === 'Database error' ? 500 : 400).json(error)
+         }));
 }
 
-function importAction(request, response) {
-    try {
-        const movies = JSON.parse(request.files.importfile.data.toString('ascii'));
-        console.log("Imported: ", movies);
-        movieModel.importMovies(movies, request.user.username)
-            .then(_ => response.send(movieView.errorCatcher('Filme erfolgreich importiert')))
-            .catch(err => response.send(movieView.errorCatcher(err)))
-    } catch (error) {
-        response.send(movieView.errorCatcher('Falsches JSON-Format'))
-    }
-}
-
-module.exports = { listAction, removeAction, editAction, saveAction, viewAction, importAction, insertAction, updateAction };
+module.exports = { listAction, removeAction, clearAction, viewAction, insertAction, updateAction };
