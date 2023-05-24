@@ -75,16 +75,48 @@
         1
       );
       $.ajax({
-        url: "http://localhost:8080/movie/",
+        url: "http://localhost:8080/movie",
         type: "POST",
         // Konvertierung in JSON-String
         data: JSON.stringify(movie),
         // Typ der gesendeten Daten
         contentType: "application/json; charset=utf-8",
         dataType: "json",
-        success: function (data) {
+        success: function(data) {
           $("#output").append(
             $("<p>").append(Object.assign(new Movie(), data).toString())
+          );
+        },
+        error: function (error) {
+          $("#output").append($("<p>").append(error.responseJSON));
+        },
+      });
+    });
+    $("#delete").click(function() {
+      $("#output").empty();
+      $.ajax({
+        url: "http://localhost:8080/movie/" + $("#id").val(),
+        type: "DELETE",
+        dataType: "json",
+        success: function (data) {
+          $("#output").append(
+            $("<p>").append("Film gelöscht")
+          );
+        },
+        error: function (error) {
+          $("#output").append($("<p>").append(error.responseJSON));
+        },
+      });
+    });
+    $("#deleteall").click(function() {
+      $("#output").empty();
+      $.ajax({
+        url: "http://localhost:8080/movie/clear",
+        type: "DELETE",
+        dataType: "json",
+        success: function (data) {
+          $("#output").append(
+            $("<p>").append("Filme gelöscht")
           );
         },
         error: function (error) {

@@ -36,8 +36,8 @@ class Database {
 
 async function getAll(sort = null, username = null) {
     const sql = `
-    SELECT m.id, title, year, published, CONCAT(users.firstname, ' ',
-    users.secondname) as fullname, owner
+    SELECT m.id, title, year, published, CONCAT(u.firstname, ' ',
+    u.secondname) as fullname, owner
     FROM movies m, users u
     WHERE m.owner = u.id
     ${username ? 'AND (u.username = ? OR published = true)' : 'AND published = true'}
@@ -49,6 +49,7 @@ async function getAll(sort = null, username = null) {
         return result.length === 0 ?
             Promise.reject('No movies found') : Promise.resolve(result);
     } catch (error) {
+        console.error(error);
         return Promise.reject('Database error');
     }
 }
@@ -73,6 +74,7 @@ async function get(id, username) {
                 return Promise.resolve(result[0]);
             }
         } catch (error) {
+            console.error(error);
             return Promise.reject("Database error");
         }
     }
@@ -85,7 +87,7 @@ async function insert(movie, username) {
         try {
             const database = new Database(connectionProperties);
             const sql1 = `SELECT id FROM users WHERE username = ?`;
-            const user_id = await database.queryClose(sql1, [username]);
+            const user_id = await database.query(sql1, [username]);
             if (user_id.length === 0) {
                 return Promise.reject('User not found');
             }
@@ -98,6 +100,7 @@ async function insert(movie, username) {
                 return Promise.resolve(result);
             }
         } catch (error) {
+            console.error(error);
             return Promise.reject("Database error");
         }
     }
@@ -112,21 +115,21 @@ async function update(movieId, movie, username) {
             
             // Check if the user exists
             const checkUserQuery = `SELECT id FROM users WHERE username = ?`;
-            const user = await database.queryClose(checkUserQuery, [username]);
+            const user = await database.query(checkUserQuery, [username]);
             if (user.length === 0) {
                 return Promise.reject('User not found');
             }
             
             // Check if the movie exists
             const checkMovieQuery = `SELECT id FROM movies WHERE id = ?`;
-            const existingMovie = await database.queryClose(checkMovieQuery, [movieId]);
+            const existingMovie = await database.query(checkMovieQuery, [movieId]);
             if (existingMovie.length === 0) {
                 return Promise.reject('Movie not found');
             }
             
             // Check if the provided movie title already exists
             const checkTitleQuery = `SELECT id FROM movies WHERE title = ?`;
-            const movieWithTitle = await database.queryClose(checkTitleQuery, [movie.title]);
+            const movieWithTitle = await database.query(checkTitleQuery, [movie.title]);
             if (movieWithTitle.length > 0 && movieWithTitle[0].id !== movieId) {
                 return Promise.reject('Title already exists');
             }
@@ -141,6 +144,7 @@ async function update(movieId, movie, username) {
                 return Promise.resolve(result);
             }
         } catch (error) {
+            console.error(error);
             return Promise.reject('Database error');
         }
     }
@@ -178,6 +182,8 @@ async function clear(username) {
             }
         } catch (error) {
             // Rollback the transaction on error
+            console.error(error);
+            const database = new Database(connectionProperties);
             await database.query('ROLLBACK');
             return Promise.reject('Database error');
         }
@@ -215,6 +221,7 @@ async function remove(movieId, username) {
                 return Promise.resolve(result);
             }
         } catch (error) {
+            console.error(error);
             return Promise.reject('Database error');
         }
     }
