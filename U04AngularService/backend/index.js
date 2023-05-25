@@ -12,7 +12,15 @@ app.use((request, response, next) => {
     response.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
     next();
 });
-const movieRouter = require('./movie/movie.router');
+
+const movieRouter = require('./movie/movie.router.js');
 app.use('/movie', movieRouter);
 app.get('/', (request, response) => response.redirect('/movie'));
-app.listen(8080, () => console.log('Server listen on port 8080'));
+// Standard Error-Handler
+app.use((error, request, response, next) => {
+    if (error.name === 'UnauthorizedError') {
+        response.status(401).send(error);
+    } else
+        response.status(500).send(error);
+});
+app.listen(8080, () => console.log('Web-Service listen on port 8080'));

@@ -1,4 +1,5 @@
 const mysql = require('mysql');
+const crypto = require('crypto');
 
 const connectionProperties = {
     host: 'localhost',
@@ -119,32 +120,32 @@ async function update(movieId, movie, username) {
     } else {
         try {
             const database = new Database(connectionProperties);
-            
+
             // Check if the user exists
             const checkUserQuery = `SELECT id FROM users WHERE username = ?`;
             const user = await database.query(checkUserQuery, [username]);
             if (user.length === 0) {
                 return Promise.reject('User not found');
             }
-            
+
             // Check if the movie exists
             const checkMovieQuery = `SELECT id FROM movies WHERE id = ?`;
             const existingMovie = await database.query(checkMovieQuery, [movieId]);
             if (existingMovie.length === 0) {
                 return Promise.reject('Movie not found');
             }
-            
+
             // Check if the provided movie title already exists
             const checkTitleQuery = `SELECT id FROM movies WHERE title = ?`;
             const movieWithTitle = await database.query(checkTitleQuery, [movie.title]);
             if (movieWithTitle.length > 0 && movieWithTitle[0].id !== movieId) {
                 return Promise.reject('Title already exists');
             }
-            
+
             // Update the movie in the database
             const updateMovieQuery = `UPDATE movies SET title = ?, year = ?, published = ?, owner = ? WHERE id = ?`;
             const result = await database.queryClose(updateMovieQuery, [movie.title, movie.year, movie.published, user[0].id, movieId]);
-            
+
             if (result.affectedRows === 0) {
                 return Promise.reject('Movie update failed');
             } else {
@@ -163,10 +164,10 @@ async function clear(username) {
     } else {
         try {
             const database = new Database(connectionProperties);
-            
+
             // Start a transaction
             await database.query('START TRANSACTION');
-            
+
             // Check if the user exists
             const checkUserQuery = 'SELECT id FROM users WHERE username = ?';
             const user = await database.query(checkUserQuery, [username]);
@@ -174,14 +175,14 @@ async function clear(username) {
                 await database.query('ROLLBACK');
                 return Promise.reject('User not found');
             }
-            
+
             // Delete movies associated with the user
             const deleteMoviesQuery = 'DELETE FROM movies WHERE owner = ?';
             const result = await database.query(deleteMoviesQuery, [user[0].id]);
-            
+
             // Commit the transaction if successful
             await database.query('COMMIT');
-            
+
             if (result.affectedRows === 0) {
                 return Promise.reject('No movies found');
             } else {
@@ -203,25 +204,25 @@ async function remove(movieId, username) {
     } else {
         try {
             const database = new Database(connectionProperties);
-            
+
             // Check if the user exists
             const checkUserQuery = `SELECT id FROM users WHERE username = ?`;
             const user = await database.query(checkUserQuery, [username]);
             if (user.length === 0) {
                 return Promise.reject('User not found');
             }
-            
+
             // Check if the movie exists
             const checkMovieQuery = `SELECT id FROM movies WHERE id = ? AND owner = ?`;
             const movie = await database.query(checkMovieQuery, [movieId, user[0].id]);
             if (movie.length === 0) {
                 return Promise.reject('Movie not found');
             }
-            
+
             // Delete the movie
             const deleteMovieQuery = `DELETE FROM movies WHERE id = ?`;
             const result = await database.query(deleteMovieQuery, [movieId]);
-            
+
             if (result.affectedRows === 0) {
                 return Promise.reject('Movie deletion failed');
             } else {
@@ -234,5 +235,25 @@ async function remove(movieId, username) {
     }
 }
 
+async function getUser(username, password) {
+    if (!username || !password) {
+        return Promise.reject('User not set');
+    } else {
+        try {
+            const database = new Database(connectionProperties);
+            const sql = ` SELECT id, username, firstname, secondname
+                FROM users WHERE username = ? AND passwordhash = ?;`;
+            const passwordHash = crypto.createHash('sha256')
+                .update(password)
+                .digest('hex');
+            const result = await database.queryClose(sql, [username, passwordHash]);
+            return !result || result.length === 0 ?
+                Promise.reject('User not found') : Promise.resolve(result[0]);
+        } catch (error) {
+            return Promise.reject('Database error');
+        }
+    }
+}
 
-module.exports = { getAll, remove, get, clear, update, insert }; 
+
+module.exports = { getAll, remove, get, clear, update, insert, getUser }; 

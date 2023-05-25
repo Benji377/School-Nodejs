@@ -10,7 +10,7 @@
     </div>
     <div>
       <label for="year">Jahr:</label>
-      <input id="year" type="number" />
+      <input id="year" type="text" />
     </div>
     <div>
       <label for="published">Öffentlich:</label>
@@ -75,7 +75,7 @@
         1
       );
       $.ajax({
-        url: "http://localhost:8080/movie",
+        url: "http://localhost:8080/movie/",
         type: "POST",
         // Konvertierung in JSON-String
         data: JSON.stringify(movie),
@@ -83,6 +83,7 @@
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: function(data) {
+          alert(data);
           $("#output").append(
             $("<p>").append(Object.assign(new Movie(), data).toString())
           );
