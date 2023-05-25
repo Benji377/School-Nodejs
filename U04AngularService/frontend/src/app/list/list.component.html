@@ -1,8 +1,11 @@
-<mat-selection-list [multiple]="false">
-  <mat-list-option *ngFor="let film of filmList">
-    {{film.title}} ({{film.year}})
-    <br>
-
-    {{film.published ? "Öffentlich" : "Privat"}} von {{film.fullname}}
-  </mat-list-option>
-</mat-selection-list>
+<div *ngIf="error; else elseBlock">
+  {{error}}
+</div>
+<ng-template #elseBlock>
+  <mat-selection-list [multiple]="false">
+    <mat-list-item *ngFor="let film of filmList">
+      <h3 matLine><b>{{film.title}} ({{film.year}})</b></h3> 
+      <p matLine><b>{{film.published ? "Öffentlich" : "Privat"}}</b> von {{film.fullname}}</p>
+    </mat-list-item>
+  </mat-selection-list>
+</ng-template>

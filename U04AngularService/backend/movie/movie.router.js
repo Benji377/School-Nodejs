@@ -1,5 +1,5 @@
 const express = require('express');
-const expressJwt = require('express-jwt');
+const expressJwt = require('express-jwt').expressjwt;
 const router = express.Router();
 const { listAction, 
     listActionPublic,

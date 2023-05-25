@@ -9,8 +9,7 @@ const URL = 'http://localhost:8080';
 @Injectable({ providedIn: 'root' })
 export class JwtAuthService {
     constructor(
-        private httpClient: HttpClient
-    ) { }
+        private httpClient: HttpClient) { }
     async login(na: string, pw: string) {
         try {
             // Holen des JWT vom Server
@@ -37,9 +36,10 @@ export class JwtAuthService {
             const jwtDecodet = jwt_decode<JwtPayload>(jwt);
             if (jwtDecodet.exp != undefined) {
                 return moment().isBefore(moment(jwtDecodet.exp! * 1000));
+            } else {
+                console.error("jwtDecodet.exp is undefined");
+                return false;
             }
-            console.error("jwtDecodet.exp is undefined");
-            return moment().isBefore(moment(0));
         }
     }
 }

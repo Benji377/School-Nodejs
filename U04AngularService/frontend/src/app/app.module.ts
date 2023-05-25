@@ -21,13 +21,16 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { AuthInterceptor } from './class/AuthInterceptor';
+import {MatDialogModule} from '@angular/material/dialog';
+import { LoginDialogComponent } from './login-dialog/login-dialog.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     NavComponent,
     NewComponent,
-    ListComponent
+    ListComponent,
+    LoginDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -45,6 +48,7 @@ import { AuthInterceptor } from './class/AuthInterceptor';
     MatInputModule,
     MatOptionModule,
     MatSelectModule,
+    MatDialogModule,
     FormsModule
   ],
   providers: [

@@ -1,0 +1,21 @@
+<h1 mat-dialog-title>Login</h1>
+<div mat-dialog-content>
+  <form [formGroup]="loginForm">
+    <mat-form-field appearance="fill" type="text">
+      <mat-label>Benutzername</mat-label>
+      <input matInput formControlName="username" [(ngModel)]="data.username" />
+      <mat-error *ngIf="loginForm.controls.username.hasError('required')">Benutzername muss eingegeben werden</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="fill" type="text">
+        <mat-label>Passwort</mat-label>
+        <input matInput formControlName="username" [(ngModel)]="data.password" />
+        <mat-error *ngIf="loginForm.controls.username.hasError('required')">Passwort muss eingegeben werden</mat-error>
+      </mat-form-field>
+  </form>
+</div>
+<div mat-dialog-actions>
+  <button mat-raised-button [disabled]="!loginForm.valid" [mat-dialog-close]="data" (click)="onLOgin()">
+    Login
+  </button>
+  <button mat-raised-button (click)="onNoClick()">Abbrechen</button>
+</div>
